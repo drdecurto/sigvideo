@@ -3,6 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/sigvideo?color=blue)](https://pypi.org/project/sigvideo/)
 [![Python](https://img.shields.io/pypi/pyversions/sigvideo)](https://pypi.org/project/sigvideo/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/drdecurto/sigvideo/blob/main/sigvideo_colab_v6.ipynb)
 [![DOI](https://img.shields.io/badge/DOI-10.3390%2Felectronics12071735-blue)](https://doi.org/10.3390/electronics12071735)
 
 **Automatic video summarization via the Signature Transform.**
