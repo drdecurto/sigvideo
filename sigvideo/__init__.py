@@ -18,7 +18,7 @@ License:
     MIT -- Copyright (c) 2023 J. de Curtò, I. de Zarzà
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __authors__ = ["J. de Curtò", "I. de Zarzà"]
 __license__ = "MIT"
 
