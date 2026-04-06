@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite both the package and the paper below."
 
 title: "sigvideo: Video Summarization with the Signature Transform"
-version: "0.3.0"
+version: "0.3.1"
 date-released: "2025-04-06"
 license: MIT
 repository-code: "https://github.com/drdecurto/sigvideo"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sigvideo"
-version = "0.3.0"
+version = "0.3.1"
 description = "Video summarization via the Signature Transform (de Curtò & de Zarzà, Electronics 2023)"
 readme = "README.md"
 license = { text = "MIT" }

@@ -3,6 +3,19 @@
 All notable changes to `sigvideo` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1] — 2025-04-06
+
+### Fixed
+- **`sigvideo.vlm.summarize_vlm()`** — two bugs, both from incorrect text batching
+  and API handling in newer `transformers` versions:
+  1. **Text batching**: `processor(text=queries, ...)` was passing a flat list of Q
+     queries for B images, giving `max_text_queries = Q // B` instead of Q. Fixed to
+     `processor(text=[queries] * B, ...)` so each image in the batch sees all queries.
+  2. **`post_process` removed**: `OwlViTImageProcessorFast` (transformers ≥ 4.45)
+     dropped the `post_process` method. Replaced with `_parse_owlvit_outputs()` which
+     parses `outputs.logits` and `outputs.pred_boxes` directly — version-independent
+     and always present in the model output.
+
 ---
 
 ## [0.3.0] — 2025-04-06
