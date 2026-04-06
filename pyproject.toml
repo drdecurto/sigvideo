@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigvideo"
+version = "0.3.0"
+description = "Video summarization via the Signature Transform (de Curtò & de Zarzà, Electronics 2023)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "J. de Curtò" },
+    { name = "I. de Zarzà" },
+]
+keywords = ["video summarization", "signature transform", "computer vision", "keyframe extraction"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Video",
+    "Intended Audience :: Science/Research",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "iisignature>=0.24",
+    "opencv-python-headless>=4.5",
+    "numpy>=1.21",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov"]
+vlm = [
+    "torch>=1.13",
+    "transformers>=4.26",
+    "Pillow>=9.0",
+    "nltk>=3.7",
+]
+
+[project.scripts]
+sigvideo = "sigvideo.cli:main"
+
+[project.urls]
+Paper       = "https://doi.org/10.3390/electronics12071735"
+Repository  = "https://github.com/drdecurto/sigvideo"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

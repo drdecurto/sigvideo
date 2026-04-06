@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the package and the paper below."
+
+title: "sigvideo: Video Summarization with the Signature Transform"
+version: "0.3.0"
+date-released: "2025-04-06"
+license: MIT
+repository-code: "https://github.com/drdecurto/sigvideo"
+url: "https://pypi.org/project/sigvideo/"
+
+authors:
+  - family-names: "de Curtò"
+    given-names: "J."
+    orcid: "https://orcid.org/0000-0001-5895-3400"
+  - family-names: "de Zarzà"
+    given-names: "I."
+
+preferred-citation:
+  type: article
+  title: "Summarization of Videos with the Signature Transform"
+  authors:
+    - family-names: "de Curtò"
+      given-names: "J."
+    - family-names: "de Zarzà"
+      given-names: "I."
+    - family-names: "Roig"
+      given-names: "G."
+    - family-names: "Calafate"
+      given-names: "C.T."
+  journal: "Electronics"
+  volume: 12
+  number: 7
+  pages: "1735"
+  year: 2023
+  doi: "10.3390/electronics12071735"
+  url: "https://doi.org/10.3390/electronics12071735"
