@@ -50,7 +50,9 @@ def extract_noun_queries(text: str, top_n: int = 20) -> List[str]:
         from nltk.corpus import stopwords
         from collections import Counter
     except ImportError:
-        raise ImportError("nltk is required: pip install nltk  (or pip install sigvideo[vlm])")
+        raise ImportError(
+            "nltk is required: pip install nltk  (or pip install sigvideo[vlm])"
+        )
 
     for resource in ("punkt", "stopwords", "averaged_perceptron_tagger",
                      "punkt_tab", "averaged_perceptron_tagger_eng"):
@@ -76,6 +78,42 @@ def load_subtitles(path: str) -> str:
     """Load a plain-text subtitle / transcript file."""
     with open(path, encoding="utf-8") as f:
         return " ".join(f.read().split())
+
+
+def _parse_owlvit_outputs(outputs, images, device):
+    """
+    Parse raw OWL-ViT model outputs into per-image detection dicts.
+
+    Avoids processor.post_process / post_process_object_detection API
+    differences across transformers versions by working directly with
+    the two raw tensors that have always been part of the output:
+
+      outputs.logits    : (B, n_patches, n_queries)  raw logits per patch
+      outputs.pred_boxes: (B, n_patches, 4)          cx,cy,w,h in [0,1]
+
+    Returns a list of dicts with keys: scores, labels, boxes (all on CPU).
+    """
+    import torch
+    import torch.nn.functional as F
+
+    results = []
+    for i, img in enumerate(images):
+        W, H = img.size
+        scores_all       = F.sigmoid(outputs.logits[i])    # (n_patches, n_queries)
+        max_scores, lbls = scores_all.max(dim=-1)          # best query per patch
+
+        cx, cy, w, h = outputs.pred_boxes[i].unbind(-1)
+        boxes = torch.stack([
+            (cx - w / 2) * W, (cy - h / 2) * H,
+            (cx + w / 2) * W, (cy + h / 2) * H,
+        ], dim=-1)
+
+        results.append({
+            "scores": max_scores.cpu(),
+            "labels": lbls.cpu(),
+            "boxes":  boxes.cpu(),
+        })
+    return results
 
 
 def summarize_vlm(
@@ -104,7 +142,6 @@ def summarize_vlm(
     _check_vlm_deps()
 
     import torch
-    import numpy as np
     from PIL import Image
     from transformers import OwlViTProcessor, OwlViTForObjectDetection
 
@@ -121,37 +158,48 @@ def summarize_vlm(
         print(f"[sigvideo.vlm] Loading OWL-ViT on {device}…")
 
     processor = OwlViTProcessor.from_pretrained("google/owlvit-base-patch32")
-    model = OwlViTForObjectDetection.from_pretrained("google/owlvit-base-patch32").to(device)
+    model = OwlViTForObjectDetection.from_pretrained(
+        "google/owlvit-base-patch32").to(device)
     model.eval()
 
     if verbose:
-        print(f"[sigvideo.vlm] {len(fnames)} frames | {len(queries)} queries | threshold={score_threshold}")
+        print(f"[sigvideo.vlm] {len(fnames)} frames | "
+              f"{len(queries)} queries | threshold={score_threshold}")
 
-    images = [Image.open(os.path.join(frames_dir, f)).convert("RGB") for f in fnames]
+    images   = [Image.open(os.path.join(frames_dir, f)).convert("RGB") for f in fnames]
     selected = []
 
     for start in range(0, len(images), mini_batch):
-        batch_imgs = images[start: start + mini_batch]
+        batch_imgs  = images[start: start + mini_batch]
         batch_names = fnames[start: start + mini_batch]
+        n = len(batch_imgs)
 
-        inputs = processor(text=queries, images=batch_imgs, return_tensors="pt").to(device)
+        # Pass [queries] * n  — one query-list per image in the batch.
+        # A flat list of Q queries with B images gives max_text_queries = Q//B,
+        # which is wrong when Q != B.  The correct form duplicates the list:
+        # [[q1,...,qQ]] * B  →  max_text_queries = Q  ✓
+        inputs = processor(
+            text=[queries] * n,
+            images=batch_imgs,
+            return_tensors="pt",
+        ).to(device)
+
         with torch.no_grad():
             outputs = model(**inputs)
 
-        target_sizes = torch.tensor([img.size[::-1] for img in batch_imgs], device=device)
-        results = processor.post_process(outputs=outputs, target_sizes=target_sizes)
+        results = _parse_owlvit_outputs(outputs, batch_imgs, device)
 
         for idx, (res, fname) in enumerate(zip(results, batch_names)):
-            boxes, scores, labels = res["boxes"], res["scores"], res["labels"]
-            frame_idx = start + idx
-            detections = [(queries[lbl], round(sc.item(), 3), [round(v, 2) for v in box.tolist()])
-                          for box, sc, lbl in zip(boxes, scores, labels)
-                          if sc >= score_threshold]
+            detections = [
+                (queries[int(lbl)], round(float(sc), 3))
+                for sc, lbl in zip(res["scores"], res["labels"])
+                if float(sc) >= score_threshold
+            ]
             if detections:
                 selected.append(fname)
             if verbose:
                 status = f"  {len(detections)} detection(s)" if detections else ""
-                print(f"  frame {frame_idx:5d}/{len(images)}{status}")
+                print(f"  frame {start + idx:5d}/{len(images)}{status}")
 
     summary = sorted(set(selected))
     if verbose:
@@ -174,9 +222,11 @@ def summarize_vlm_from_subtitles(
     Returns:
         (selected_frames, text_queries)
     """
-    text = load_subtitles(subtitles_path)
+    text    = load_subtitles(subtitles_path)
     queries = extract_noun_queries(text, top_n=top_n_queries)
     if verbose:
         print(f"[sigvideo.vlm] Queries: {queries}")
-    frames = summarize_vlm(frames_dir, queries, score_threshold, mini_batch, device, verbose)
+    frames = summarize_vlm(
+        frames_dir, queries, score_threshold, mini_batch, device, verbose
+    )
     return frames, queries
